@@ -71,26 +71,31 @@ function writeIterationsToExcel(data, personDirPath) {
     const sheet = workbook.addWorksheet(sheetName)
 
     iterations.forEach((iteration, i) => {
-      const iterationSumAndMax = iteration.reduce((acc, [time, value]) => {
+
+      const {sum, max} = iteration.reduce((acc, [time, value]) => {
         sheet.addRow([i+1, time, value])
         acc.sum += value
         if (value > acc.max) acc.max = value
         return acc
       }, {sum: 0, max: 0})
 
-      const iterationVarAndMad = iteration.reduce((acc, [ , value], i, arr) => {
-        acc.variance += ((Math.pow((iterationSumAndMax.sum / arr.length) - value, 2)) / (arr.length - 1))
-        acc.rawMad += Math.abs((iterationSumAndMax.sum / arr.length) - value)
-        return acc
-      }, {variance: 0, rawMad: 0})
+      const {variance, rawMad, wamp} = iteration.reduce((acc, [ , value], i, arr) => {
 
-      const mad = (1 / iteration.length) * iterationVarAndMad.rawMad
+        acc.variance += ((Math.pow((sum / arr.length) - value, 2)) / (arr.length - 1))  //variance
+        acc.rawMad += Math.abs((sum / arr.length) - value)   // rawMad
+        if (arr[i+1] && Math.abs(value - arr[i+1][1]) >= 10) acc.wamp += 1  // wamp
+
+        return acc
+      }, {variance: 0, rawMad: 0, wamp: 0})
+
+      const mad = (1 / iteration.length) * rawMad
 
       sheet.getCell('E' + (i+2)).value = i+1
-      sheet.getCell('F' + (i+2)).value = iterationSumAndMax.sum
-      sheet.getCell('G' + (i+2)).value = iterationSumAndMax.max
-      sheet.getCell('H' + (i+2)).value = iterationVarAndMad.variance
+      sheet.getCell('F' + (i+2)).value = sum
+      sheet.getCell('G' + (i+2)).value = max
+      sheet.getCell('H' + (i+2)).value = variance
       sheet.getCell('I' + (i+2)).value = mad
+      sheet.getCell('J' + (i+2)).value = wamp
     })
 
     sheet.getCell('E1').value = 'IterNum'
@@ -98,6 +103,7 @@ function writeIterationsToExcel(data, personDirPath) {
     sheet.getCell('G1').value = 'Max'
     sheet.getCell('H1').value = 'Var'
     sheet.getCell('I1').value = 'Mad'
+    sheet.getCell('J1').value = 'WAMP'
   }
 
    return workbook.xlsx.writeFile(path.resolve(personDirPath + '.xlsx'))

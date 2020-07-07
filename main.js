@@ -3,8 +3,8 @@ const {readDataFromExcel, writeIterationsToExcel} = require('./exel')
 const [, , personDirPath] = process.argv
 
 
-const threshold = 23
-const minIterationLength = 50
+const threshold = 50
+const minIterationLength = 90
 
 function measurementsToIterations(rawMeasurements) {
   const measurements = rawMeasurements.filter(([, value], i, arr) => {
