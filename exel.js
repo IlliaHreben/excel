@@ -9,31 +9,28 @@ const libre = require('libreoffice-convert');
 
 const xlsToXlsx = async (xlsPath, xlsxPath) => {
   const file = await fs.readFile(xlsPath);
-
-  await libre.convert(file, '.xlsx', undefined, async (err, data) => {
-    if (err) {
-      console.log(`Error converting file: ${err}`);
-    }
-
-    // Here in done you have pdf file which you can save or transfer in another stream
-    const result = await fs.writeFile(xlsxPath, data);
-    return result;
+  const convertedFile = await new Promise((resolve, reject) => {
+    libre.convert(file, '.xlsx', undefined, (err, data) => (err ? reject(err) : resolve(data)));
   });
 
-  // const excelcnvPath = path.join('C:', 'Program Files', 'Microsoft Office', 'root', 'Office16', 'excelcnv.exe')
-  // const arguments = [ '-oice', xlsPath, xlsxPath ]
-
-  // return new Promise((resolve, reject) => {
-  //   childProcess.execFile(
-  //     excelcnvPath,
-  //     arguments,
-  //     (err, out, stdErr) => {
-  //       // console.log(out, stdErr, xlsPath);
-  //       err ? reject(err) : resolve()
-  //     }
-  //   )
-  // })
+  await fs.writeFile(xlsxPath, convertedFile);
+  return convertedFile;
 };
+
+// for windows
+// const excelcnvPath = path.join('C:', 'Program Files', 'Microsoft Office', 'root', 'Office16', 'excelcnv.exe')
+// const arguments = [ '-oice', xlsPath, xlsxPath ]
+
+// return new Promise((resolve, reject) => {
+//   childProcess.execFile(
+//     excelcnvPath,
+//     arguments,
+//     (err, out, stdErr) => {
+//       // console.log(out, stdErr, xlsPath);
+//       err ? reject(err) : resolve()
+//     }
+//   )
+// })
 
 async function readDataFromExcel(personDirPath) {
   return fs.readdir(personDirPath)
