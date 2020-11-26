@@ -1,21 +1,5 @@
-const node_xj = require('xls-to-json');
+/* eslint-disable max-len */
 const { readDataFromExcel, writeIterationsToExcel } = require('./exel');
-
-// node_xj(
-//   {
-//     input: './measurements/sample.xls', // input xls
-//     output: 'output.json', // output json
-//     sheet: 'sheetname', // specific sheetname
-//     rowsToSkip: 1
-//   },
-//   (err, result) => {
-//     if (err) {
-//       console.error(err);
-//     } else {
-//       console.log(result);
-//     }
-//   },
-// );
 
 const [, , personDirPath] = process.argv;
 
@@ -29,7 +13,7 @@ function measurementsToIterations(rawMeasurements) {
   });
 
   const iterationsBoundaries = measurements
-    .reduce((acc, [time, value], i) => {
+    .reduce((acc, [/* time */, value], i) => {
       const [, nextValue] = measurements[i + 1] || [];
       const [, prevValue] = measurements[i - 1] || [];
       if (value < threshold && nextValue && nextValue > value && prevValue > value) {
