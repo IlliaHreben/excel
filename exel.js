@@ -1,13 +1,27 @@
-/* eslint-disable max-len */
-/* eslint-disable no-console */
+/* eslint-disable no-unused-expressions */
 const fs = require('fs').promises;
-// const childProcess = require('child_process');
+const childProcess = require('child_process');
 const path = require('path');
 const Excel = require('exceljs');
 const os = require('os');
 const libre = require('libreoffice-convert');
 
 const xlsToXlsx = async (xlsPath, xlsxPath) => {
+  if (os.type() === 'Windows_NT') {
+    const excelcnvPath = path.join('C:', 'Program Files', 'Microsoft Office', 'root', 'Office16', 'excelcnv.exe');
+    const args = ['-oice', xlsPath, xlsxPath];
+
+    return new Promise((resolve, reject) => {
+      childProcess.execFile(
+        excelcnvPath,
+        args,
+        (err) => {
+          err ? reject(err) : resolve();
+        },
+      );
+    });
+  }
+
   const file = await fs.readFile(xlsPath);
   const convertedFile = await new Promise((resolve, reject) => {
     libre.convert(file, '.xlsx', undefined, (err, data) => (err ? reject(err) : resolve(data)));
@@ -16,21 +30,6 @@ const xlsToXlsx = async (xlsPath, xlsxPath) => {
   await fs.writeFile(xlsxPath, convertedFile);
   return convertedFile;
 };
-
-// for windows
-// const excelcnvPath = path.join('C:', 'Program Files', 'Microsoft Office', 'root', 'Office16', 'excelcnv.exe')
-// const arguments = [ '-oice', xlsPath, xlsxPath ]
-
-// return new Promise((resolve, reject) => {
-//   childProcess.execFile(
-//     excelcnvPath,
-//     arguments,
-//     (err, out, stdErr) => {
-//       // console.log(out, stdErr, xlsPath);
-//       err ? reject(err) : resolve()
-//     }
-//   )
-// })
 
 async function readDataFromExcel(personDirPath) {
   return fs.readdir(personDirPath)
