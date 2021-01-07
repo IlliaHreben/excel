@@ -2,7 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const fs = require('fs');
-// const folder = fs.mkdir(`uploads/${new Date().toLocaleString()}`)
+const path = require('path');
+
 const { calculateAndConvert } = require('../main');
 
 const storage = multer.diskStorage({
@@ -56,8 +57,9 @@ const api = express.Router()
     } catch (error) {
       console.error(error);
     }
-
-    res.send({ ok: true });
+    console.log(path.resolve(__dirname, `../../${destination}.xlsx`));
+    res.sendFile(path.resolve(__dirname, `../../${destination}.xlsx`));
+    // res.send({ ok: true });
   });
 
 const app = express()
