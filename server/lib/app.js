@@ -8,9 +8,9 @@ const { calculateAndConvert } = require('../main');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const path = `uploads/${new Date().toLocaleString()}`;
-    fs.mkdirSync(path, { recursive: true });
-    cb(null, path);
+    const uploadsPath = `uploads/${new Date().toLocaleString()}`;
+    fs.mkdirSync(uploadsPath, { recursive: true });
+    cb(null, uploadsPath);
   },
   filename: (req, file, cb) => {
     cb(null, file.originalname);
@@ -57,9 +57,8 @@ const api = express.Router()
     } catch (error) {
       console.error(error);
     }
-    console.log(path.resolve(__dirname, `../../${destination}.xlsx`));
-    res.sendFile(path.resolve(__dirname, `../../${destination}.xlsx`));
-    // res.send({ ok: true });
+
+    res.sendFile(path.resolve(__dirname, `../${destination}.xlsx`));
   });
 
 const app = express()
