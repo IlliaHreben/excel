@@ -1,19 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const multer = require('multer');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 
 const { calculateAndConvert } = require('../main');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: async (req, file, next) => {
     const uploadsPath = `uploads/${new Date().toLocaleString()}`;
-    fs.mkdirSync(uploadsPath, { recursive: true });
-    cb(null, uploadsPath);
+    await fs.mkdir(uploadsPath, { recursive: true });
+    next(null, uploadsPath);
   },
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
+  filename: (req, file, next) => {
+    next(null, file.originalname);
   },
 });
 
