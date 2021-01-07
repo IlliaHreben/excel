@@ -28,7 +28,10 @@ export default function DropZone (props) {
     borderColor : '#ff1744'
   }
 
-  const onDrop = useCallback(props.fetchXls, [ props ])
+  const onDrop = useCallback(async acceptedFiles => {
+    const filesInfo = await props.fetchXls(acceptedFiles)
+    await props.fetchXlsx(filesInfo)
+  }, [ props ])
 
     const onDropRejected = () => {
       console.log('onDropRejected')
@@ -65,7 +68,7 @@ export default function DropZone (props) {
         ? (<>
             <UploadIcon color = '#3f51b5' />
             <p>Drag 'n' drop some files here, or click to select files</p>
-            <p>(Only *.txt files will be accepted)</p>
+            <p>(Only *.xls files will be accepted)</p>
         </>)
         : (<>
             <UploadIcon color = '#303f9f' />

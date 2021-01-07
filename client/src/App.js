@@ -17,8 +17,6 @@ export const handleApiResponse = promise => {
 
 function App() {
 
-  const [ filesInfo, setFilesInfo ] = useState([])
-
   const fetchXls = async acceptedFiles => {
     try {
       const formData = new FormData();
@@ -29,8 +27,19 @@ function App() {
         method: 'POST',
         body: formData
       }))
+      return res
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  const fetchXlsx = async (filesInfo) => {
+    try {
+      const destination = filesInfo[ 0 ].destination;
+      await fetch(`/api/xlsx?destination=${ destination }`)
+      window.location.replace(`/${ destination }.xlsx`)
+      // await fetch(`/api/${ destination }.xlsx`)
 
-      setFilesInfo(res)
+      // setFilesInfo(res)
     } catch (err) {
       console.log(err);
     }
@@ -39,7 +48,8 @@ function App() {
       <div    className = "App">
           <header className = "App-header">
               <DropZone
-          fetchXls     = { fetchXls }
+          fetchXls={ fetchXls }
+          fetchXlsx={ fetchXlsx }
           // handleError    = { handleError }
           // handleModal    = { this.handleMountModal }
           // renderBackDrop = { this.renderBackDrop }

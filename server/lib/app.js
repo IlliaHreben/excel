@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const serveStatic = require('serve-static');
 const multer = require('multer');
 const fs = require('fs').promises;
-const path = require('path');
 
 const { calculateAndConvert } = require('../main');
 
@@ -57,11 +57,12 @@ const api = express.Router()
     } catch (error) {
       console.error(error);
     }
-
-    res.sendFile(path.resolve(__dirname, `../${destination}.xlsx`));
+    res.send({ ok: true, body: {} });
+    // res.sendFile(path.resolve(__dirname, `../${destination}.xlsx`));
   });
 
 const app = express()
+  .use('/uploads', serveStatic('./uploads'))
   .use(bodyParser.json())
   .use('/api', api);
 
