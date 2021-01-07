@@ -62,6 +62,7 @@ const api = express.Router()
   });
 
 const app = express()
+  .use(serveStatic('../client/build', { extensions: ['html'] }))
   .use('/uploads', serveStatic('./uploads'))
   .use(bodyParser.json())
   .use('/api', api);
