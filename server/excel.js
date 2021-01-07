@@ -10,16 +10,20 @@ const xlsToXlsx = async (xlsPath, xlsxPath) => {
   if (os.type() === 'Windows_NT') {
     const excelcnvPath = path.join('C:', 'Program Files', 'Microsoft Office', 'root', 'Office16', 'excelcnv.exe');
     const args = ['-oice', xlsPath, xlsxPath];
-
-    return new Promise((resolve, reject) => {
-      childProcess.execFile(
-        excelcnvPath,
-        args,
-        (err) => {
-          err ? reject(err) : resolve();
-        },
-      );
-    });
+    try {
+      return new Promise((resolve, reject) => {
+        childProcess.execFile(
+          excelcnvPath,
+          args,
+          (err) => {
+            err ? reject(err) : resolve();
+          },
+        );
+      });
+    } catch (err) {
+      console.error('Cannot process childProcess.execFile');
+      throw err;
+    }
   }
 
   const file = await fs.readFile(xlsPath);
@@ -32,33 +36,31 @@ const xlsToXlsx = async (xlsPath, xlsxPath) => {
 };
 
 async function readDataFromExcel(personDirPath) {
-  return fs.readdir(personDirPath)
-    .then((xlsFilesNames) => fs.mkdtemp(path.join(os.tmpdir(), 'XlsxFiles'))
-      .then((xlsxFilesDirPath) => xlsFilesNames.map((xlsFileName) => [
-        path.resolve(personDirPath, xlsFileName),
-        path.join(xlsxFilesDirPath, `${xlsFileName}x`),
-      ])))
-    .then((pathes) => pathes
-      .reduce(
-        (acc, [xlsPath, xlsxPath]) => acc.then(async () => {
-          const result = await xlsToXlsx(xlsPath, xlsxPath);
-          return result;
-        }),
-        Promise.resolve(),
-      )
-      .then(() => pathes.map(([, xlsxPathes]) => xlsxPathes)))
-    .then((xlsxPathes) => Promise.all(
-      xlsxPathes.map((xlsxPath) => {
-        const workbook = new Excel.Workbook();
-        return workbook.xlsx.readFile(xlsxPath)
-          .then(() => {
-            const [, , , ...timestamps] = workbook.getWorksheet(1).getColumn(1).values;
-            const [, , , ...values] = workbook.getWorksheet(1).getColumn(2).values;
-            const measurements = timestamps.map((timestamp, i) => [timestamp, values[i]]);
-            return { measurements, xlsxPath };
-          });
-      }),
-    ));
+  const xlsFilesNames = await fs.readdir(personDirPath);
+  const xlsxFilesDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'XlsxFiles'));
+  const pathes = await xlsFilesNames.map((xlsFileName) => [
+    path.resolve(personDirPath, xlsFileName),
+    path.join(xlsxFilesDirPath, `${xlsFileName}x`),
+  ]);
+
+  const xlsxPathes = await pathes.map(([, xlsxPath]) => xlsxPath);
+
+  await Promise.all(
+    pathes.map(([xlsPath, xlsxPath]) => xlsToXlsx(xlsPath, xlsxPath)),
+  );
+
+  return Promise.all(
+    xlsxPathes.map((xlsxPath) => {
+      const workbook = new Excel.Workbook();
+      return workbook.xlsx.readFile(xlsxPath)
+        .then(() => {
+          const [, , , ...timestamps] = workbook.getWorksheet(1).getColumn(1).values;
+          const [, , , ...values] = workbook.getWorksheet(1).getColumn(2).values;
+          const measurements = timestamps.map((timestamp, i) => [timestamp, values[i]]);
+          return { measurements, xlsxPath };
+        });
+    }),
+  );
 }
 
 // function setCell(worksheet, cell, value) {
