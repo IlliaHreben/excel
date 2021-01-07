@@ -1,7 +1,5 @@
 /* eslint-disable max-len */
-const { readDataFromExcel, writeIterationsToExcel } = require('./exel');
-
-const [, , personDirPath] = process.argv;
+const { readDataFromExcel, writeIterationsToExcel } = require('./excel');
 
 const threshold = 50;
 const minIterationLength = 90;
@@ -28,9 +26,8 @@ function measurementsToIterations(rawMeasurements) {
 
   const iterations = iterationsBoundaries
     .reduce((acc, iterationBoundary, i, arr) => {
-      // console.log(iterationLimit, iterations[i+1])
       const iteration = measurements.slice(iterationBoundary, arr[i + 1]);
-      // console.log(iteration)
+
       return [...acc, iteration];
     }, [])
     .filter((arr) => arr.length > minIterationLength);
@@ -38,15 +35,15 @@ function measurementsToIterations(rawMeasurements) {
   return iterations;
 }
 
-readDataFromExcel(personDirPath)
-  .then((data) => data.map(({ measurements, xlsxPath }) => {
-    // console.log(xlsxPath)
+const calculateAndConvert = async (personDirPath) => {
+  const data = await readDataFromExcel(personDirPath);
+
+  const iterationsAndPath = data.map(({ measurements, xlsxPath }) => {
     const iterations = measurementsToIterations(measurements);
-    // console.log(JSON.stringify(iterations, null, 2))
     return { iterations, xlsxPath };
-  }))
-  .then((data) => writeIterationsToExcel(data, personDirPath));
+  });
 
-// iterations.unshift(0)
+  return writeIterationsToExcel(iterationsAndPath, personDirPath);
+};
 
-// console.log(iterations) // 9 9 9 10 10 11
+module.exports = { calculateAndConvert };
