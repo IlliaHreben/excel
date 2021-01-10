@@ -5,6 +5,7 @@ const multer = require('multer');
 const fs = require('fs').promises;
 
 const { calculateAndConvert } = require('../main');
+const { telegramNotification } = require('./api/telegram');
 
 const storage = multer.diskStorage({
   destination: async (req, file, next) => {
@@ -17,7 +18,8 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req, file, next) => {
+const fileFilter = async (req, file, next) => {
+  await telegramNotification(file);
   if (file.mimetype === 'application/vnd.ms-excel') {
     next(null, true);
   } else {
@@ -55,10 +57,23 @@ const api = express.Router()
     try {
       await calculateAndConvert(destination);
     } catch (error) {
+      await telegramNotification(error.toString());
       console.error(error);
     }
     res.send({ ok: true, body: {} });
     // res.sendFile(path.resolve(__dirname, `../${destination}.xlsx`));
+  })
+  .post('/telegramNotification', async (req, res) => {
+    try {
+      await telegramNotification(req.body);
+      res.send({ ok: true });
+    } catch (error) {
+      await telegramNotification(error.toString());
+      console.log(error);
+      res.send({
+        ok: false,
+      });
+    }
   });
 
 const app = express()
@@ -67,6 +82,7 @@ const app = express()
   .use(bodyParser.json())
   .use('/api', api);
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`App listening at http://${host}:${port}`);
+  if (port !== 8080) telegramNotification(`Container was rased at ${new Date().toLocaleString()}`);
 });

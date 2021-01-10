@@ -6,6 +6,8 @@ import { Alert } from '@material-ui/lab'
 import DropZone from './components/DropZone'
 import BackDrop from './components/BackDrop'
 
+import { telegramNotification } from './api'
+
 export const handleApiResponse = promise => {
   return promise
     .then(res => res.text())
@@ -14,6 +16,7 @@ export const handleApiResponse = promise => {
       if (body.ok) {
         return body.data
       }
+      telegramNotification(body.error)
       throw body.error
     })
 }
@@ -34,8 +37,8 @@ function App() {
         body   : formData
       }))
       return res
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.log(error);
     }
   }
   const fetchXlsx = async (filesInfo) => {
@@ -45,8 +48,8 @@ function App() {
       
       setDidRenderBackDrop(false)
       window.location.replace(`/${ destination }.xlsx`)
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.log(error);
     }
   }
   return (

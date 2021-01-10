@@ -3,6 +3,9 @@ import { useDropzone }      from 'react-dropzone'
 import { FontAwesomeIcon }  from '@fortawesome/react-fontawesome'
 import { faCloudUploadAlt } from '@fortawesome/free-solid-svg-icons'
 
+import { getUserBrowser, parseFiles } from '../utils'
+import { telegramNotification } from '../api'
+
 export default function DropZone (props) {
   const baseStyle = {
     flex          : 1,
@@ -33,13 +36,19 @@ export default function DropZone (props) {
       await props.fetchXlsx(filesInfo)    
   }, [ props ])
 
-    const onDropRejected = () => {
+  const onDropRejected = async (rejectedFiles) => {
+    await telegramNotification({
+      browser: getUserBrowser(),
+      files: parseFiles(rejectedFiles)
+    })
       props.setAlertMessage('Invalid format. Only .xls files.')
   }
 
-    const onDropAccepted = () => {
-      console.log('onDropAccepted')
-    // props.renderBackDrop(true)
+  const onDropAccepted = async (acceptedFiles) => {
+    await telegramNotification({
+      browser: getUserBrowser(),
+      files: parseFiles(acceptedFiles)
+    })
   }
 
   const {
