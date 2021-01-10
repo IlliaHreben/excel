@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import './App.css'
 
 import DropZone from './components/DropZone'
+import BackDrop from './components/BackDrop'
 
 export const handleApiResponse = promise => {
   return promise
@@ -17,15 +18,19 @@ export const handleApiResponse = promise => {
 
 function App() {
 
+  const [ didRenderBackDrop, setDidRenderBackDrop ] = useState(false)
+
   const fetchXls = async acceptedFiles => {
     try {
+      setDidRenderBackDrop(true)
+
       const formData = new FormData();
 
       acceptedFiles.forEach(file => formData.append('xls', file))
 
       const res = await handleApiResponse( fetch('/api/xls', {
-        method: 'POST',
-        body: formData
+        method : 'POST',
+        body   : formData
       }))
       return res
     } catch (err) {
@@ -36,10 +41,9 @@ function App() {
     try {
       const destination = filesInfo[ 0 ].destination;
       await fetch(`/api/xlsx?destination=${ destination }`)
+      
+      setDidRenderBackDrop(false)
       window.location.replace(`/${ destination }.xlsx`)
-      // await fetch(`/api/${ destination }.xlsx`)
-
-      // setFilesInfo(res)
     } catch (err) {
       console.log(err);
     }
@@ -48,12 +52,10 @@ function App() {
       <div    className = "App">
           <header className = "App-header">
               <DropZone
-          fetchXls={ fetchXls }
-          fetchXlsx={ fetchXlsx }
-          // handleError    = { handleError }
-          // handleModal    = { this.handleMountModal }
-          // renderBackDrop = { this.renderBackDrop }
-        />
+                fetchXls  = { fetchXls }
+                fetchXlsx = { fetchXlsx }
+              />
+              <BackDrop open = { didRenderBackDrop } />
           </header>
       </div>
   )

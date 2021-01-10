@@ -27,7 +27,7 @@ const fileFilter = (req, file, next) => {
 
 const upload = multer({ dest: 'uploads/', storage, fileFilter });
 
-const port = 8080;
+const port = process.env.APP_PORT || process.env.PORT || 8080;
 const host = 'localhost';
 
 const api = express.Router()
