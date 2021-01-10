@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import './App.css'
+import { Snackbar } from '@material-ui/core'
+import { Alert } from '@material-ui/lab'
 
 import DropZone from './components/DropZone'
 import BackDrop from './components/BackDrop'
@@ -19,11 +21,10 @@ export const handleApiResponse = promise => {
 function App() {
 
   const [ didRenderBackDrop, setDidRenderBackDrop ] = useState(false)
+  const [ alertMessage, setAlertMessage ] = useState('')
 
   const fetchXls = async acceptedFiles => {
     try {
-      setDidRenderBackDrop(true)
-
       const formData = new FormData();
 
       acceptedFiles.forEach(file => formData.append('xls', file))
@@ -52,10 +53,22 @@ function App() {
       <div    className = "App">
           <header className = "App-header">
               <DropZone
-                fetchXls  = { fetchXls }
+                fetchXls = { fetchXls }
                 fetchXlsx = { fetchXlsx }
+                setAlertMessage={ setAlertMessage }
+                setDidRenderBackDrop= { setDidRenderBackDrop }
               />
-              <BackDrop open = { didRenderBackDrop } />
+              <BackDrop open={ didRenderBackDrop } />
+              <Snackbar
+                open={ !!alertMessage }
+                autoHideDuration={ 3000 }
+                onClose={ () => setAlertMessage('') }
+                anchorOrigin={ { vertical: 'top', horizontal: 'center' } }
+              >
+                  <Alert variant='filled' severity='error'>
+                      {alertMessage}
+                  </Alert>
+              </Snackbar>
           </header>
       </div>
   )

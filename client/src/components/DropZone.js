@@ -3,8 +3,6 @@ import { useDropzone }      from 'react-dropzone'
 import { FontAwesomeIcon }  from '@fortawesome/react-fontawesome'
 import { faCloudUploadAlt } from '@fortawesome/free-solid-svg-icons'
 
-import { handleApiResponse } from '../App'
-
 export default function DropZone (props) {
   const baseStyle = {
     flex          : 1,
@@ -29,16 +27,14 @@ export default function DropZone (props) {
   }
 
   const onDrop = useCallback(async acceptedFiles => {
-    const filesInfo = await props.fetchXls(acceptedFiles)
-    await props.fetchXlsx(filesInfo)
+    if (!acceptedFiles.length) return
+      props.setDidRenderBackDrop(true)
+      const filesInfo = await props.fetchXls(acceptedFiles)
+      await props.fetchXlsx(filesInfo)    
   }, [ props ])
 
     const onDropRejected = () => {
-      console.log('onDropRejected')
-    // props.handleError({
-    //   code    : 'INVALID_FILE_FORMAT',
-    //   message : 'The file must have extension ".txt".'
-    // })
+      props.setAlertMessage('Invalid format. Only .xls files.')
   }
 
     const onDropAccepted = () => {
