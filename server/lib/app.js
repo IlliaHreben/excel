@@ -84,5 +84,5 @@ const app = express()
 
 app.listen(port, async () => {
   console.log(`App listening at http://${host}:${port}`);
-  if (port !== 8080) telegramNotification(`Container was rased at ${new Date().toLocaleString()}`);
+  if (port !== 8080) await telegramNotification(`Container was rased at ${new Date().toLocaleString()}`);
 });
