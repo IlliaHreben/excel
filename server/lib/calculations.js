@@ -1,5 +1,4 @@
 /* eslint-disable max-len */
-const { readDataFromExcel, writeIterationsToExcel } = require('./excel');
 
 const threshold = 50;
 const minIterationLength = 90;
@@ -35,15 +34,17 @@ function measurementsToIterations(rawMeasurements) {
   return iterations;
 }
 
-const calculateAndConvert = async (personDirPath) => {
-  const data = await readDataFromExcel(personDirPath);
+const pickIndexInCycle = (incomingIndex, array) => {
+  if (!Number.isInteger(incomingIndex)) throw new Error('Index not a number');
+  if (!Array.isArray(array)) throw new Error('Array not an array');
+  if (incomingIndex < 0) throw new Error('Wrong index');
 
-  const iterationsAndPath = data.map(({ measurements, xlsxPath }) => {
-    const iterations = measurementsToIterations(measurements);
-    return { iterations, xlsxPath };
-  });
-
-  return writeIterationsToExcel(iterationsAndPath, personDirPath);
+  if (incomingIndex > array.length) {
+    return pickIndexInCycle(incomingIndex - array.length, array);
+  }
+  return incomingIndex;
 };
 
-module.exports = { calculateAndConvert };
+const pickValueInCycle = (incomingIndex, array) => array[pickIndexInCycle(incomingIndex, array)];
+
+module.exports = { pickValueInCycle, measurementsToIterations };

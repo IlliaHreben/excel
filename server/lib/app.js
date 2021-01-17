@@ -4,7 +4,7 @@ const serveStatic = require('serve-static');
 const multer = require('multer');
 const fs = require('fs').promises;
 
-const { calculateAndConvert } = require('../main');
+const { calculateAndConvert } = require('./excel');
 const { telegramNotification } = require('./api/telegram');
 
 const storage = multer.diskStorage({
