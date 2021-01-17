@@ -1,7 +1,9 @@
 /* eslint-disable max-len */
+const { zip, mean, round } = require('lodash');
 
 const threshold = 50;
 const minIterationLength = 90;
+const maxIterationLength = 200;
 
 function measurementsToIterations(rawMeasurements) {
   const measurements = rawMeasurements.filter(([, value], i, arr) => {
@@ -29,7 +31,7 @@ function measurementsToIterations(rawMeasurements) {
 
       return [...acc, iteration];
     }, [])
-    .filter((arr) => arr.length > minIterationLength);
+    .filter((arr) => arr.length > minIterationLength && arr.length < maxIterationLength);
 
   return iterations;
 }
@@ -47,4 +49,37 @@ const pickIndexInCycle = (incomingIndex, array) => {
 
 const pickValueInCycle = (incomingIndex, array) => array[pickIndexInCycle(incomingIndex, array)];
 
-module.exports = { pickValueInCycle, measurementsToIterations };
+const getRandomColor = () => Math.floor(Math.random() * 16777215).toString(16);
+
+const sampleInArray = (array, count) => {
+  count -= 1;
+  const { length } = array;
+  const sampled = [array[0]];
+  for (let i = 1; i <= count; i++) {
+    const index = Math.round(i * (length / count)) - 1;
+    sampled.push(array[index]);
+  }
+  return sampled;
+};
+
+const normalizeTimeFrames = (timeFrames) => {
+  const howMuchToTake = timeFrames[0];
+  return timeFrames.map((timeFrame) => (timeFrame - howMuchToTake));
+};
+
+const toFixedArray = (arr) => arr.map((item) => round(item, 2));
+
+const getAverageValues = (values) => {
+  const ziped = zip(...values);
+  return ziped.map((frame) => mean(frame));
+};
+
+module.exports = {
+  pickValueInCycle,
+  measurementsToIterations,
+  getRandomColor,
+  sampleInArray,
+  normalizeTimeFrames,
+  toFixedArray,
+  getAverageValues,
+};

@@ -4,9 +4,18 @@ const path = require('path');
 const Excel = require('exceljs');
 const os = require('os');
 const libre = require('libreoffice-convert');
+const _ = require('lodash');
 
+const { createChart, createMainChart } = require('./charts');
 const { colors } = require('./constants');
-const { pickValueInCycle, measurementsToIterations } = require('./calculations');
+const {
+  pickValueInCycle,
+  measurementsToIterations,
+  sampleInArray,
+  normalizeTimeFrames,
+  toFixedArray,
+  getAverageValues,
+} = require('./calculations');
 
 const xlsToXlsx = async (xlsPath, xlsxPath) => {
   if (os.type() === 'Windows_NT') {
@@ -94,15 +103,37 @@ function writeIterationsToExcel(data, personDirPath) {
       { header: 'WAMP', key: 'wamp' },
     ];
 
+    const mainChartData = {
+      timeFrames: [],
+      iterationsValues: [],
+    };
+
     const calculatedData = iterations.reduce((blank, iteration, i) => {
+      const iterationNumber = i + 1;
+
       ws.addRows(iteration.map(([time, value]) => ({
-        id: i + 1,
+        id: iterationNumber,
         time,
         value,
       })));
-      const values = iteration.map(([, value]) => value);
-      const sum = values.reduce((acc, value) => acc + value, 0);
-      const max = Math.max(...values);
+
+      const [timeFrames, values] = _.zip(...iteration);
+      const sum = _.sum(values);
+      const max = _.max(values);
+
+      const normalizedTimeFrames = normalizeTimeFrames(
+        sampleInArray(timeFrames, 8),
+      );
+
+      const timeLabels = toFixedArray(normalizedTimeFrames);
+      const chartUrl = createChart({
+        iterationNumber,
+        values,
+        timeLabels,
+      });
+
+      mainChartData.timeFrames.push(normalizedTimeFrames);
+      mainChartData.iterationsValues.push(values);
 
       const { variance, rawMad, wamp } = iteration.reduce((acc, [, value], k, arr) => {
         acc.variance += (((sum / arr.length) - value) ** 2) / (arr.length - 1); // variance
@@ -115,12 +146,13 @@ function writeIterationsToExcel(data, personDirPath) {
       const mad = (1 / iteration.length) * rawMad;
 
       return {
-        iteration: [...blank.iteration, i + 1],
+        iteration: [...blank.iteration, iterationNumber],
         sum: [...blank.sum, sum],
         max: [...blank.max, max],
         variance: [...blank.variance, variance],
         mad: [...blank.mad, mad],
         wamp: [...blank.wamp, wamp],
+        chartLinks: [...blank.chartLinks, chartUrl],
       };
     }, {
       iteration: ['№'],
@@ -129,7 +161,9 @@ function writeIterationsToExcel(data, personDirPath) {
       variance: ['Var'],
       mad: ['Mad'],
       wamp: ['WAMP'],
+      chartLinks: [],
     });
+
     ws.getColumn('iteration').values = calculatedData.iteration;
     ws.getColumn('sum').values = calculatedData.sum;
     ws.getColumn('max').values = calculatedData.max;
@@ -144,6 +178,11 @@ function writeIterationsToExcel(data, personDirPath) {
       fillBackgroundCell(row.getCell('id'), color);
       fillBackgroundCell(row.getCell('time'), color);
       fillBackgroundCell(row.getCell('value'), color);
+    });
+
+    createMainChart({
+      timeLabels: toFixedArray(getAverageValues(mainChartData.timeFrames)),
+      iterationsValues: sampleInArray(mainChartData.iterationsValues, 7),
     });
   });
 
