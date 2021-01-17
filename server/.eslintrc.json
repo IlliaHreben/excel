@@ -20,6 +20,24 @@
     "rules": {
         "no-console": "off",
         "no-param-reassign": "off",
-        "no-plusplus": "off"
+        "no-plusplus": "off",
+        "indent": [
+            "error",
+            4
+        ],
+        "key-spacing": [
+            "error",
+            {
+                "align": "colon"
+            }
+        ],
+        "no-multi-spaces": [
+            "error",
+            {
+                "exceptions": {
+                    "VariableDeclarator": true
+                }
+            }
+        ]
     }
 }
