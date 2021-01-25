@@ -59,7 +59,10 @@ const api = express.Router()
         } catch (error) {
             await telegramNotification(error.toString());
             console.error(error);
-            res.send({ ok: false });
+            res.send({
+                ok   : false,
+                error: 'Something went wrong',
+            });
         }
         res.send({ ok: true, body: {} });
     // res.sendFile(path.resolve(__dirname, `../${destination}.xlsx`));

@@ -17,7 +17,7 @@ export const handleApiResponse = promise => {
         return body.data
       }
       telegramNotification(body.error)
-      throw body.error
+      throw new Error(body.error)
     })
 }
 
@@ -39,18 +39,24 @@ function App() {
       return res
     } catch (error) {
       console.log(error);
+      setAlertMessage(error.message)
     }
   }
   const fetchXlsx = async (filesInfo) => {
+    const destination = filesInfo[ 0 ].destination;
     try {
-      const destination = filesInfo[ 0 ].destination;
-      await fetch(`/api/xlsx?destination=${ destination }`)
-      
-      setDidRenderBackDrop(false)
-      window.location.replace(`/${ destination }.xlsx`)
+      await handleApiResponse(
+        fetch(`/api/xlsx?destination=${ destination }`)
+      )
     } catch (error) {
-      console.log(error);
+      console.log('dddddddddddddddddddddd');
+      setAlertMessage(error.message)
+      setDidRenderBackDrop(false)
+      return
     }
+    setDidRenderBackDrop(false)
+    
+    window.location.replace(`/${ destination }.xlsx`)
   }
   return (
       <div    className = "App">
