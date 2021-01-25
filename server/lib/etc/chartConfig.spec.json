@@ -1,0 +1,28 @@
+{
+    "background": "#fff",
+    "axis": {
+        "domainWidth": 0.5,
+        "grid": true,
+        "labelPadding": 2,
+        "tickSize": 5,
+        "tickWidth": 0.5,
+        "titleFontWeight": "normal"
+    },
+    "axisBand": {
+        "grid": false
+    },
+    "axisX": {
+        "gridWidth": 0.2
+    },
+    "axisY": {
+        "gridDash": [
+            3
+        ],
+        "gridWidth": 0.4
+    },
+    "legend": {
+        "labelFontSize": 11,
+        "padding": 1,
+        "symbolType": "square"
+    }
+}
