@@ -1,5 +1,6 @@
-/* eslint-disable max-len */
-const { zip, mean, round } = require('lodash');
+const {
+    zip, mean, round,
+} = require('lodash');
 
 const threshold = 50;
 const minIterationLength = 90;
@@ -22,7 +23,8 @@ function measurementsToIterations(rawMeasurements) {
         }, [0])
         .filter((iterationBoundary, i, arr) => {
             const nextIterationBoundary = arr[i + 1];
-            return (nextIterationBoundary - iterationBoundary) > minIterationLength || !nextIterationBoundary;
+            return (nextIterationBoundary - iterationBoundary) > minIterationLength
+                || !nextIterationBoundary;
         });
 
     const iterations = iterationsBoundaries
@@ -68,11 +70,41 @@ const normalizeTimeFrames = (timeFrames) => {
     return timeFrames.map((timeFrame) => (timeFrame - howMuchToTake));
 };
 
-const toFixedArray = (arr) => arr.map((item) => round(item, 2));
+const toFixedArray = (arr, count = 4) => arr.map((item) => round(item, count));
 
 const getAverageValues = (values) => {
     const ziped = zip(...values);
     return ziped.map((frame) => mean(frame));
+};
+
+const normalizeIterations = (iterations) => {
+    const timeFrames = Array.from(new Set(
+        iterations
+            .map((iteration) => iteration.map(([timeFrame]) => timeFrame))
+            .flat(),
+    )).sort((current, next) => (current > next ? 1 : -1));
+
+    iterations.forEach((iteration) => { // eslint-disable-line consistent-return
+        const iterationTimeFrames = iteration.map(([time]) => time);
+
+        timeFrames.forEach((timeFrame, i) => { // eslint-disable-line consistent-return
+            if ((!iterationTimeFrames.includes(timeFrame)) && (i < iteration.length)) {
+                const prevFrame = (iteration[i - 1] && iteration[i - 1][0]) || 0;
+                const currentPeriod = round(iteration[i][0] - prevFrame, 4);
+                const currentFrame = round(timeFrame - prevFrame, 4);
+                const currentPercent = currentFrame / currentPeriod;
+                const nextValue = iteration[i][1];
+                const prevValue = iteration[i - 1][1];
+                const currentValue = round(
+                    nextValue * currentPercent + prevValue * (1 - currentPercent),
+                    3,
+                );
+
+                iteration.splice(i, 0, [round(timeFrame, 4), currentValue]);
+            }
+        });
+    });
+    return iterations;
 };
 
 module.exports = {
@@ -83,4 +115,5 @@ module.exports = {
     normalizeTimeFrames,
     toFixedArray,
     getAverageValues,
+    normalizeIterations,
 };

@@ -6,16 +6,16 @@ const os           = require('os');
 const libre        = require('libreoffice-convert');
 const _            = require('lodash');
 
-const { getImage }                     = require('./api/chart');
 const { createChart, createMainChart } = require('./charts');
 const { colors, workbook: { CHART } }  = require('./constants');
 const {
     pickValueInCycle,
     measurementsToIterations,
-    sampleInArray,
+    // sampleInArray,
     normalizeTimeFrames,
     toFixedArray,
-    getAverageValues,
+    // getAverageValues,
+    normalizeIterations,
 } = require('./calculations');
 
 const xlsToXlsx = async (xlsPath, xlsxPath) => {
@@ -85,12 +85,68 @@ const fillBackgroundCell = (cell, color) => {
     };
 };
 
+const renderCharts = async (iterations) => {
+    const normalized = normalizeIterations(iterations);
+
+    const chartPromises = normalized.map((iteration, i) => createChart(iteration, i + 1));
+    return Promise.all(chartPromises);
+};
+
+const addChartsToWS = async ({ ws, wb, charts }) => {
+    const imageRows = 5;
+
+    const maxImgsPerLine = Math.ceil(charts.length / imageRows);
+    let currentLine    = 0;
+    let currentColumn  = -1;
+
+    charts.forEach((buffer, i) => {
+        currentColumn += 1;
+        if (i + 1 > maxImgsPerLine * (currentLine + 1)) {
+            currentLine += 1;
+            currentColumn = 0;
+        }
+        const mainChart = wb.addImage({
+            buffer,
+            extension: 'png',
+        });
+
+        ws.addImage(mainChart, {
+            tl: {
+                col: CHART.START_PLACEMENT_COLUMN + (currentColumn * CHART.SMALL.COLUMNS),
+                row: CHART.START_PLACEMENT_ROW + (currentLine * CHART.SMALL.ROWS),
+            },
+            ext: {
+                width : CHART.SMALL.WIDTH,
+                height: CHART.SMALL.HEIGHT,
+            },
+        });
+    });
+
+    const mainChartBuffer = await createMainChart();
+
+    const mainChart = wb.addImage({
+        buffer   : mainChartBuffer,
+        extension: 'png',
+    });
+
+    const startMainChartRow = imageRows * CHART.SMALL.ROWS + 1;
+
+    ws.addImage(mainChart, {
+        tl: {
+            col: CHART.START_PLACEMENT_COLUMN,
+            row: startMainChartRow,
+        },
+        ext: {
+            width : CHART.BIG.WIDTH,
+            height: CHART.BIG.HEIGHT,
+        },
+    });
+};
+
 async function writeIterationsToExcel(data, personDirPath) {
     const wb         = new Excel.Workbook();
     wb.creator = 'Illia Hreben illiahreben@gmail.com';
     wb.created = new Date();
-
-    const imageRows = 5;
 
     await Promise.all(data.map(async ({ iterations, xlsxPath }) => {
         const sheetName  = path.parse(xlsxPath).name;
@@ -113,7 +169,15 @@ async function writeIterationsToExcel(data, personDirPath) {
             iterationsValues: [],
         };
 
-        const calculatedData = iterations.reduce((blank, iteration, i) => {
+        const normalizedIterations = iterations.map((iteration) => {
+            const [timeFrames, values] = _.zip(...iteration);
+
+            const normalizedTimeFrames = normalizeTimeFrames(timeFrames);
+
+            return _.unzip([toFixedArray(normalizedTimeFrames), values]);
+        });
+
+        const calculatedData = normalizedIterations.reduce((blank, iteration, i) => {
             const iterationNumber = i + 1;
 
             ws.addRows(iteration.map(([time, value]) => ({
@@ -126,16 +190,7 @@ async function writeIterationsToExcel(data, personDirPath) {
             const sum                  = _.sum(values);
             const max                  = _.max(values);
 
-            const normalizedTimeFrames = normalizeTimeFrames(
-                sampleInArray(timeFrames, 8),
-            );
-
-            const timeLabels = toFixedArray(normalizedTimeFrames);
-            const chartUrl   = createChart({
-                iterationNumber,
-                values,
-                timeLabels,
-            });
+            const normalizedTimeFrames = normalizeTimeFrames(timeFrames);
 
             mainChartData.timeFrames.push(normalizedTimeFrames);
             mainChartData.iterationsValues.push(values);
@@ -151,22 +206,20 @@ async function writeIterationsToExcel(data, personDirPath) {
             const mad = (1 / iteration.length) * rawMad;
 
             return {
-                iteration : [...blank.iteration, iterationNumber],
-                sum       : [...blank.sum, sum],
-                max       : [...blank.max, max],
-                variance  : [...blank.variance, variance],
-                mad       : [...blank.mad, mad],
-                wamp      : [...blank.wamp, wamp],
-                chartLinks: [...blank.chartLinks, chartUrl],
+                iteration: [...blank.iteration, iterationNumber],
+                sum      : [...blank.sum, sum],
+                max      : [...blank.max, max],
+                variance : [...blank.variance, variance],
+                mad      : [...blank.mad, mad],
+                wamp     : [...blank.wamp, wamp],
             };
         }, {
-            iteration : ['№'],
-            sum       : ['Sum'],
-            max       : ['Max'],
-            variance  : ['Var'],
-            mad       : ['Mad'],
-            wamp      : ['WAMP'],
-            chartLinks: [],
+            iteration: ['№'],
+            sum      : ['Sum'],
+            max      : ['Max'],
+            variance : ['Var'],
+            mad      : ['Mad'],
+            wamp     : ['WAMP'],
         });
 
         ws.getColumn('iteration').values = calculatedData.iteration;
@@ -185,59 +238,9 @@ async function writeIterationsToExcel(data, personDirPath) {
             fillBackgroundCell(row.getCell('value'), color);
         });
 
-        const images = await Promise.all(calculatedData.chartLinks.map(getImage));
+        const charts = await renderCharts(normalizedIterations);
 
-        const maxImgsPerLine = Math.ceil(images.length / imageRows);
-        let currentLine    = 0;
-        let currentColumn  = -1;
-
-        images.forEach((buffer, i) => {
-            currentColumn += 1;
-            if (i + 1 > maxImgsPerLine * (currentLine + 1)) {
-                currentLine += 1;
-                currentColumn = 0;
-            }
-            const mainChart = wb.addImage({
-                buffer,
-                extension: 'png',
-            });
-
-            ws.addImage(mainChart, {
-                tl: {
-                    col: CHART.START_PLACEMENT_COLUMN + (currentColumn * CHART.SMALL.COLUMNS),
-                    row: CHART.START_PLACEMENT_ROW + (currentLine * CHART.SMALL.ROWS),
-                },
-                ext: {
-                    width : CHART.SMALL.WIDTH,
-                    height: CHART.SMALL.HEIGHT,
-                },
-            });
-        });
-
-        const mainChartUrl = createMainChart({
-            timeLabels      : toFixedArray(getAverageValues(mainChartData.timeFrames)),
-            iterationsValues: sampleInArray(mainChartData.iterationsValues, 7),
-        });
-
-        const img = await getImage(mainChartUrl);
-
-        const mainChart = wb.addImage({
-            buffer   : img,
-            extension: 'png',
-        });
-
-        const startMainChartRow = imageRows * CHART.SMALL.ROWS + 1;
-
-        ws.addImage(mainChart, {
-            tl: {
-                col: CHART.START_PLACEMENT_COLUMN,
-                row: startMainChartRow,
-            },
-            ext: {
-                width : CHART.BIG.WIDTH,
-                height: CHART.BIG.HEIGHT,
-            },
-        });
+        await addChartsToWS({ ws, wb, charts });
     }));
 
     return wb.xlsx.writeFile(path.resolve(`${personDirPath}.xlsx`));

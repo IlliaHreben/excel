@@ -1,49 +1,55 @@
-const quiche = require('quiche');
-const { getRandomColor } = require('./calculations');
+const Vega = require('vega');
+// const { getRandomColor } = require('./calculations');
+const chartTemplate = require('./etc/chartTemplate.spec.json');
 
-const createChart = (chartData) => {
-    const {
-        timeLabels,
-        values,
-        iterationNumber,
-    } = chartData;
-    const chart = quiche('line');
-    chart.setTitle(`Iteration #${iterationNumber}`);
-    chart.addData(values, 'Pulse wave', getRandomColor(), 2);
-    chart.addAxisLabels('x', timeLabels);
-    chart.setAutoScaling();
-    chart.setWidth(300);
-    chart.setHeight(200);
-    // chart.setAxisRange('y', 500, 3500, 250); // axis, start, end, range
-    // chart.setTransparentBackground();
+const mainChartData = [];
 
-    const imageUrl = chart.getUrl(true);
+const dumpChartData = (chartData, i) => {
+    const dumped = chartData
+        .map(([time, value]) => ({
+            x: time,
+            y: value,
+            c: i,
+        }))
+        .sort((current, next) => (current.x > next.x ? 1 : -1));
 
-    return imageUrl.replace('chdl=Pulse%20wave&', '');
+    mainChartData.push(...JSON.parse(JSON.stringify(dumped)));
+
+    return dumped;
 };
 
-const createMainChart = (chartData) => {
-    const {
-        timeLabels,
-        iterationsValues,
-    } = chartData;
-    const chart = quiche('line');
+const createConfig = (data, title) => {
+    const filledTemplate = JSON.parse(JSON.stringify(chartTemplate));
+    filledTemplate.data[0].values = data;
+    filledTemplate.title.text = title;
+    return filledTemplate;
+};
 
-    chart.setTitle('Comparison of iterations');
-    iterationsValues.forEach((iteration, i) => {
-        const color = getRandomColor();
-        console.log(color);
-        chart.addData(iteration, `Iteration #${i + 1}`, color);
-    });
+const createChartBuffer = async (data) => {
+    const view = new Vega
+        .View(Vega.parse(data))
+        .renderer('none')
+        .initialize();
 
-    chart.addAxisLabels('x', timeLabels);
-    chart.setAutoScaling();
-    chart.setWidth(500);
-    chart.setHeight(350);
-    // chart.setTransparentBackground();
+    const svg = await view.toSVG();
+    return Buffer.from(svg);
+};
 
-    const imageUrl = chart.getUrl(true);
-    return imageUrl;
+const createChart = async (chartData, i) => {
+    const dumpedData = dumpChartData(chartData, i);
+    const config = createConfig(dumpedData, `Iteration №${i}`);
+    const chartBuffer = await createChartBuffer(config);
+    return chartBuffer;
+};
+
+const createMainChart = async () => {
+    const config = createConfig(mainChartData);
+    config.width = 500;
+    config.height = 350;
+    const chartBuffer = await createChartBuffer(config);
+
+    console.log(JSON.stringify(config));
+    return chartBuffer;
 };
 
 module.exports = {
