@@ -49,13 +49,12 @@ function App() {
         fetch(`/api/xlsx?destination=${ destination }`)
       )
     } catch (error) {
-      console.log('dddddddddddddddddddddd');
       setAlertMessage(error.message)
       setDidRenderBackDrop(false)
       return
     }
     setDidRenderBackDrop(false)
-    
+
     window.location.replace(`/${ destination }.xlsx`)
   }
   return (

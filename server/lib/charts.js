@@ -48,7 +48,6 @@ const createMainChart = async () => {
     config.height = 350;
     const chartBuffer = await createChartBuffer(config);
 
-    console.log(JSON.stringify(config));
     return chartBuffer;
 };
 
