@@ -35,7 +35,7 @@ export default function DropZone (props) {
 
       props.setDidRenderBackDrop(true)
       const filesInfo = await props.fetchXls(acceptedFiles)
-      console.log({ filesInfo });
+
       await props.fetchXlsx(filesInfo)  
     } catch (error) {
       await telegramNotification({

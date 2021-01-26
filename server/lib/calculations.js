@@ -4,7 +4,7 @@ const {
 
 const threshold = 50;
 const minIterationLength = 90;
-const maxIterationLength = 200;
+const maxIterationLength = 140;
 
 function measurementsToIterations(rawMeasurements) {
     const measurements = rawMeasurements.filter(([, value], i, arr) => {

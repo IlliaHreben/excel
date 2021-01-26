@@ -3,8 +3,6 @@ const svg2png = require('svg2png');
 // const { getRandomColor } = require('./calculations');
 const chartTemplate = require('./etc/chartTemplate.spec.json');
 
-const mainChartData = [];
-
 const dumpChartData = (chartData, i) => {
     const dumped = chartData
         .map(([time, value]) => ({
@@ -13,8 +11,6 @@ const dumpChartData = (chartData, i) => {
             c: i,
         }))
         .sort((current, next) => (current.x > next.x ? 1 : -1));
-
-    mainChartData.push(...JSON.parse(JSON.stringify(dumped)));
 
     return dumped;
 };
@@ -37,13 +33,13 @@ const createChartBuffer = async (data) => {
 };
 
 const createChart = async (chartData, i) => {
-    const dumpedData = dumpChartData(chartData, i);
-    const config = createConfig(dumpedData, `Iteration №${i}`);
+    const dumpedData = dumpChartData(chartData, i + 1);
+    const config = createConfig(dumpedData, `Iteration №${i + 1}`);
     const chartBuffer = await createChartBuffer(config);
-    return chartBuffer;
+    return [chartBuffer, dumpedData];
 };
 
-const createMainChart = async () => {
+const createMainChart = async (mainChartData) => {
     const config = createConfig(mainChartData);
     config.width = 500;
     config.height = 350;
