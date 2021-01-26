@@ -1,4 +1,5 @@
 const Vega = require('vega');
+const svg2png = require('svg2png');
 // const { getRandomColor } = require('./calculations');
 const chartTemplate = require('./etc/chartTemplate.spec.json');
 
@@ -32,7 +33,7 @@ const createChartBuffer = async (data) => {
         .initialize();
 
     const svg = await view.toSVG();
-    return Buffer.from(svg);
+    return svg2png(Buffer.from(svg));
 };
 
 const createChart = async (chartData, i) => {
