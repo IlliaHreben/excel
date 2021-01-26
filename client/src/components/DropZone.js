@@ -31,12 +31,24 @@ export default function DropZone (props) {
 
   const onDrop = useCallback(async acceptedFiles => {
     if (!acceptedFiles.length) return
+    try {
+
       props.setDidRenderBackDrop(true)
       const filesInfo = await props.fetchXls(acceptedFiles)
-      await props.fetchXlsx(filesInfo)    
+      console.log({ filesInfo });
+      await props.fetchXlsx(filesInfo)  
+    } catch (error) {
+      await telegramNotification({
+        error: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      })
+      props.setAlertMessage(error.message)
+      props.setDidRenderBackDrop(false)
+    }
+      
   }, [ props ])
 
   const onDropRejected = async (rejectedFiles) => {
+    if (!rejectedFiles.length) return
     await telegramNotification({
       browser: getUserBrowser(),
       files: parseFiles(rejectedFiles)
@@ -57,7 +69,7 @@ export default function DropZone (props) {
     isDragActive,
     isDragAccept,
     isDragReject
-  } = useDropzone({ onDrop, onDropRejected, onDropAccepted,  accept: 'application/vnd.ms-excel' })
+  } = useDropzone({ onDrop, onDropRejected, onDropAccepted })
 
   const style = useMemo(() => ({
     ...baseStyle,

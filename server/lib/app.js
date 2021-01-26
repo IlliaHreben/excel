@@ -36,7 +36,7 @@ const api = express.Router()
     .get('/hello', (req, res) => { res.send('hello'); })
     .post('/xls', upload.array('xls'), (req, res) => {
         if (!req.files.length) {
-            res.send({ ok: false });
+            res.send({ ok: false, error: 'Invalid format. Only .xls files.' });
             return;
         }
         res.send({
