@@ -1,6 +1,6 @@
 module.exports = {
     CHART: {
-        START_PLACEMENT_COLUMN: 11,
+        START_PLACEMENT_COLUMN: 12,
         START_PLACEMENT_ROW   : 1,
         BIG                   : {
             WIDTH  : 500,
@@ -15,5 +15,11 @@ module.exports = {
             ROWS   : 11,
         },
     },
-
+    DATA: {
+        PLACEMENTS: {
+            NUMBER: 'A',
+            TIME  : 'B',
+            VALUE : 'C',
+        },
+    },
 };
