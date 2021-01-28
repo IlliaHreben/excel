@@ -9,7 +9,7 @@ const { telegramNotification } = require('./api/telegram');
 
 const storage = multer.diskStorage({
     destination: async (req, file, next) => {
-        const uploadsPath = `uploads/${new Date().toLocaleString()}`;
+        const uploadsPath = `uploads/${req.headers['x-date']}`;
         await fs.mkdir(uploadsPath, { recursive: true });
         next(null, uploadsPath);
     },
@@ -36,7 +36,7 @@ const api = express.Router()
     .get('/hello', (req, res) => { res.send('hello'); })
     .post('/xls', upload.array('xls'), (req, res) => {
         if (!req.files.length) {
-            res.send({ ok: false });
+            res.send({ ok: false, error: 'Invalid format. Only .xls files.' });
             return;
         }
         res.send({

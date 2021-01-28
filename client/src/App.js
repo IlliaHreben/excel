@@ -27,20 +27,20 @@ function App() {
   const [ alertMessage, setAlertMessage ] = useState('')
 
   const fetchXls = async acceptedFiles => {
-    try {
-      const formData = new FormData();
+    const formData = new FormData();
 
-      acceptedFiles.forEach(file => formData.append('xls', file))
+    acceptedFiles.forEach(file => formData.append('xls', file))
 
-      const res = await handleApiResponse( fetch('/api/xls', {
-        method : 'POST',
+    const res = await handleApiResponse(
+      fetch('/api/xls', {
+        method: 'POST',
+        headers: {
+          'x-date': new Date().toISOString()
+        },
         body   : formData
-      }))
-      return res
-    } catch (error) {
-      console.log(error);
-      setAlertMessage(error.message)
-    }
+      })
+    )
+    return res
   }
   const fetchXlsx = async (filesInfo) => {
     const destination = filesInfo[ 0 ].destination;

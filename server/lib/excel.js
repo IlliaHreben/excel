@@ -88,11 +88,13 @@ const fillBackgroundCell = (cell, color) => {
 const renderCharts = async (iterations) => {
     const normalized = normalizeIterations(iterations);
 
-    const chartPromises = normalized.map((iteration, i) => createChart(iteration, i + 1));
+    const chartPromises = normalized.map(createChart);
     return Promise.all(chartPromises);
 };
 
-const addChartsToWS = async ({ ws, wb, charts }) => {
+const addChartsToWS = async ({
+    ws, wb, charts, chartsSchema,
+}) => {
     const imageRows = 5;
 
     const maxImgsPerLine = Math.ceil(charts.length / imageRows);
@@ -122,7 +124,7 @@ const addChartsToWS = async ({ ws, wb, charts }) => {
         });
     });
 
-    const mainChartBuffer = await createMainChart();
+    const mainChartBuffer = await createMainChart(chartsSchema);
 
     const mainChart = wb.addImage({
         buffer   : mainChartBuffer,
@@ -238,9 +240,16 @@ async function writeIterationsToExcel(data, personDirPath) {
             fillBackgroundCell(row.getCell('value'), color);
         });
 
-        const charts = await renderCharts(normalizedIterations);
+        const chartsData = await renderCharts(normalizedIterations);
 
-        await addChartsToWS({ ws, wb, charts });
+        const [charts, chartsSchema] = _.zip(...chartsData);
+
+        await addChartsToWS({
+            ws,
+            wb,
+            charts,
+            chartsSchema: chartsSchema.flat(),
+        });
     }));
 
     return wb.xlsx.writeFile(path.resolve(`${personDirPath}.xlsx`));
