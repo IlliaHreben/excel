@@ -6,8 +6,8 @@ const os           = require('os');
 const libre        = require('libreoffice-convert');
 const _            = require('lodash');
 
-const { createChart, createMainChart } = require('./charts');
-const { colors, workbook: { CHART, DATA } }  = require('./constants');
+const { createChart, createMainChart }      = require('./charts');
+const { colors, workbook: { CHART, DATA } } = require('./constants');
 const {
     pickValueInCycle,
     measurementsToIterations,
@@ -47,20 +47,37 @@ const xlsToXlsx = async (xlsPath, xlsxPath) => {
     return convertedFile;
 };
 
+function fillNormalizedValues({ ws }) {
+    const meanColumn  = ws.getColumn('mean').values;
+    const stdevColumn = ws.getColumn('stdev').values;
+    ws.eachRow((row, i) => {
+        if (i === 1) return;
+        const calculatedDataRowNumber = +row.getCell('id').value + 1;
+        // console.log(calculatedDataRowNumber);
+        const mean  = meanColumn[calculatedDataRowNumber];
+        const stdev = stdevColumn[calculatedDataRowNumber];
+        if (i === 2) console.log({ mean, stdev });
+    });
+    console.log(meanColumn);
+}
+
 const getIterationsFirstLastCells = ({ ws }) => {
     const firstLastCells = [];
 
     ws.eachRow((row, i) => {
-        if (i === 1 || i === 0) {
-            return;
-        }
+        if (i === 1 || i === 0) return;
+
         const iterNum = row.getCell(DATA.PLACEMENTS.NUMBER).value - 1;
         if (!firstLastCells[iterNum]) firstLastCells[iterNum] = { min: i, max: 0 };
 
         firstLastCells[iterNum].max = Math.max(firstLastCells[iterNum].max, i);
     });
 
-    return firstLastCells.map(({ min, max }) => `${DATA.PLACEMENTS.VALUE}${min}:${DATA.PLACEMENTS.VALUE}${max}`);
+    return firstLastCells.map(({ min, max }) => ({
+        placement: `${DATA.PLACEMENTS.VALUE}${min}:${DATA.PLACEMENTS.VALUE}${max}`,
+        min,
+        max,
+    }));
 };
 
 async function readDataFromExcel(personDirPath) {
@@ -163,13 +180,21 @@ const addChartsToWS = async ({
 
 const fillCalculatedData = ({ ws, calculatedData }) => {
     const iterationsFirstLastCells = getIterationsFirstLastCells({ ws });
-
+    // iterationsFirstLastCells.map(({ min, max }) => {
+    //     getCellsData({ws, })
+    // });
     const stdDevFormulas = iterationsFirstLastCells.map(
-        (itFirstLastCells) => ({ formula: `=STDEV(${itFirstLastCells})` }),
+        ({ placement }) => `=STDEV(${placement})`,
     );
-    calculatedData.stdev = ['STDEV', ...stdDevFormulas];
+    stdDevFormulas.unshift('STDEV');
+    calculatedData.stdev = calculatedData.stdev
+        .map((value, i) => ({ value, formula: stdDevFormulas[i] }));
+    console.log(calculatedData.stdev[1]);
     const meanFormulas = iterationsFirstLastCells.map(
-        (itFirstLastCells) => ({ formula: `=AVERAGE(${itFirstLastCells})` }),
+        ({ placement }, i) => ({
+            value  : calculatedData.stdev[i],
+            formula: `=AVERAGE(${placement})`,
+        }),
     );
     calculatedData.mean = ['Mean', ...meanFormulas];
 
@@ -178,8 +203,15 @@ const fillCalculatedData = ({ ws, calculatedData }) => {
     });
 };
 
+// function getCellsData({
+//     ws, columnName, from, to,
+// }) {
+//     const column = ws.getColumn(columnName);
+//     return column.values.slice(from, to);
+// }
+
 async function writeIterationsToExcel(data, personDirPath) {
-    const wb         = new Excel.Workbook();
+    const wb   = new Excel.Workbook();
     wb.creator = 'Illia Hreben illiahreben@gmail.com';
     wb.created = new Date();
 
@@ -190,7 +222,7 @@ async function writeIterationsToExcel(data, personDirPath) {
             { header: '№', key: 'id' },
             { header: 'Time', key: 'time' },
             { header: 'Value', key: 'value' },
-            {},
+            { header: 'Normalized', key: 'norm' },
             { header: '№', key: 'iteration' },
             { header: 'Sum', key: 'sum' },
             { header: 'Max', key: 'max' },
@@ -240,7 +272,13 @@ async function writeIterationsToExcel(data, personDirPath) {
                 return acc;
             }, { variance: 0, rawMad: 0, wamp: 0 });
 
+            const mean = (sum / iteration.length).toFixed(2);
             const mad = (1 / iteration.length) * rawMad;
+
+            const stdev = _.round(Math.sqrt(
+                iteration.reduce((acc, [, value]) => acc + ((value - mean) ** 2), 0)
+                / (iteration.length - 1),
+            ), 4);
 
             return {
                 iteration: [...blank.iteration, iterationNumber],
@@ -249,6 +287,8 @@ async function writeIterationsToExcel(data, personDirPath) {
                 var      : [...blank.var, variance],
                 mad      : [...blank.mad, mad],
                 wamp     : [...blank.wamp, wamp],
+                mean     : [...blank.mean, mean],
+                stdev    : [...blank.stdev, stdev],
             };
         }, {
             iteration: ['№'],
@@ -257,6 +297,8 @@ async function writeIterationsToExcel(data, personDirPath) {
             var      : ['Var'],
             mad      : ['Mad'],
             wamp     : ['WAMP'],
+            mean     : ['Mean'],
+            stdev    : ['STDEV'],
         });
 
         fillCalculatedData({ ws, calculatedData });
@@ -273,6 +315,7 @@ async function writeIterationsToExcel(data, personDirPath) {
         const chartsData = await renderCharts(normalizedIterations);
 
         const [charts, chartsSchema] = _.zip(...chartsData);
+        fillNormalizedValues({ ws });
 
         await addChartsToWS({
             ws,
