@@ -80,7 +80,7 @@ export default function DropZone (props) {
 
   return (
       <div { ...getRootProps({ className: 'dropZone', style }) }>
-          <input { ...getInputProps({ multiple: true, accept: 'application/vnd.ms-excel' }) } />
+          <input { ...getInputProps({ multiple: true }) } />
           {!isDragActive
         ? (<>
             <UploadIcon color = '#3f51b5' />

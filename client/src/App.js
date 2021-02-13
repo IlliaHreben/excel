@@ -34,9 +34,9 @@ function App() {
     const res = await handleApiResponse(
       fetch('/api/xls', {
         method: 'POST',
-        headers: {
-          'x-date': new Date().toISOString()
-        },
+        // headers: {
+        //   'x-date': +new Date()
+        // },
         body   : formData
       })
     )

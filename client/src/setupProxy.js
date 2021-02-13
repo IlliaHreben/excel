@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 const httpProxyMiddleware = require('http-proxy-middleware');
-const port = process.env.APP_PORT || process.env.PORT || 8080
+const port = process.env.APP_PORT || process.env.PORT || 8081
 
 module.exports = function(app) {
     app.use(
