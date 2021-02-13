@@ -1,5 +1,6 @@
 name: Docker Image CI
-
+env:
+  HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 on:
   push:
     branches: [ master ]
