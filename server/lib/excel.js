@@ -53,7 +53,7 @@ function fillNormalizedValues({ ws }) {
     ws.eachRow((row, i) => {
         if (i === 1) return;
         const calculatedDataRowNumber = +row.getCell('id').value + 1;
-        // console.log(calculatedDataRowNumber);
+
         const mean  = meanColumn[calculatedDataRowNumber];
         const stdev = stdevColumn[calculatedDataRowNumber];
         if (i === 2) console.log({ mean, stdev });
@@ -180,23 +180,24 @@ const addChartsToWS = async ({
 
 const fillCalculatedData = ({ ws, calculatedData }) => {
     const iterationsFirstLastCells = getIterationsFirstLastCells({ ws });
-    // iterationsFirstLastCells.map(({ min, max }) => {
-    //     getCellsData({ws, })
-    // });
+
+    // stdev
     const stdDevFormulas = iterationsFirstLastCells.map(
         ({ placement }) => `=STDEV(${placement})`,
     );
-    stdDevFormulas.unshift('STDEV');
+
     calculatedData.stdev = calculatedData.stdev
         .map((value, i) => ({ value, formula: stdDevFormulas[i] }));
-    console.log(calculatedData.stdev[1]);
-    const meanFormulas = iterationsFirstLastCells.map(
+
+    calculatedData.stdev.unshift('STDEV');
+    // mean
+    calculatedData.mean = iterationsFirstLastCells.map(
         ({ placement }, i) => ({
-            value  : calculatedData.stdev[i],
+            value  : calculatedData.mean[i],
             formula: `=AVERAGE(${placement})`,
         }),
     );
-    calculatedData.mean = ['Mean', ...meanFormulas];
+    calculatedData.mean.unshift('Mean');
 
     Object.entries(calculatedData).forEach(([designation, values]) => {
         ws.getColumn(designation).values = values;
@@ -297,8 +298,8 @@ async function writeIterationsToExcel(data, personDirPath) {
             var      : ['Var'],
             mad      : ['Mad'],
             wamp     : ['WAMP'],
-            mean     : ['Mean'],
-            stdev    : ['STDEV'],
+            mean     : [],
+            stdev    : [],
         });
 
         fillCalculatedData({ ws, calculatedData });

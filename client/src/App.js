@@ -35,7 +35,7 @@ function App() {
       fetch('/api/xls', {
         method: 'POST',
         headers: {
-          'x-date': new Date().toISOString()
+          'x-date': +new Date()
         },
         body   : formData
       })

@@ -9,6 +9,7 @@ const { telegramNotification } = require('./api/telegram');
 
 const storage = multer.diskStorage({
     destination: async (req, file, next) => {
+        console.log({ 'x-date': req.headers['x-date'] });
         const uploadsPath = `uploads/${req.headers['x-date']}`;
         await fs.mkdir(uploadsPath, { recursive: true });
         next(null, uploadsPath);
